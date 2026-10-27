@@ -105,6 +105,15 @@ function renderIncidentStatusBadge(item: IncidentListItem) {
   );
 }
 
+function cleanDisplayTitle(rawTitle: string | null | undefined): string {
+  if (!rawTitle) return "Suv ta'minoti xabari";
+  let t = rawTitle.trim();
+  t = t.replace(/\*+/g, "").trim();
+  t = t.replace(/^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]\s*/g, "");
+  t = t.replace(/^(?:[A-Z]{2}\s+)+/i, (m) => (m.length > 8 ? "" : m));
+  return t || "Suv ta'minoti xabari";
+}
+
 function IncidentsContent() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams?.get("status") || "";
@@ -389,17 +398,17 @@ function IncidentsContent() {
         </Card>
 
         {/* Hodisalar Jadvali */}
-        <Card className="overflow-hidden p-0">
+        <Card className="overflow-hidden p-0 border border-slate-200/90 dark:border-slate-800 shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-slate-50/90 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:bg-slate-800/60 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th className="py-3.5 px-4">Hodisa nomi va Murojaat</th>
-                  <th className="py-3.5 px-4">📍 Hudud va Manzil</th>
-                  <th className="py-3.5 px-4">Holati</th>
-                  <th className="py-3.5 px-4">📢 Manba (Kanal/Guruh)</th>
-                  <th className="py-3.5 px-4">Aniqlangan vaqti</th>
-                  <th className="py-3.5 px-4 text-right">Amal</th>
+                  <th className="py-3.5 px-4 min-w-[420px] w-auto">Hodisa nomi va Murojaat</th>
+                  <th className="py-3.5 px-4 w-44 min-w-[150px] max-w-[200px]">📍 Hudud va Manzil</th>
+                  <th className="py-3.5 px-4 w-36 min-w-[130px] whitespace-nowrap">Holati</th>
+                  <th className="py-3.5 px-4 w-48 min-w-[160px] max-w-[220px]">📢 Manba (Kanal/Guruh)</th>
+                  <th className="py-3.5 px-4 w-36 min-w-[130px] whitespace-nowrap">Aniqlangan vaqti</th>
+                  <th className="py-3.5 px-4 w-24 text-right whitespace-nowrap">Amal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -423,186 +432,203 @@ function IncidentsContent() {
                 ) : (
                   data.items.map((item) => {
                     const matchedRule = getMatchedRule(item);
+                    const cleanTitle = cleanDisplayTitle(item.title);
+                    const descUrl = item.description?.match(/https:\/\/t\.me\/(?:c\/\d+|\w+)(?:\/\d+)+/)?.[0];
+                    const directUrl = item.message_url || descUrl || (item.source_username ? `https://t.me/${item.source_username}` : undefined);
+
                     return (
-                    <tr
-                      key={item.id}
-                      className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
-                    >
-                      <td className="py-3.5 px-4 max-w-sm">
-                        {/* AI Tahlili Natijasi (Murojaat / Yangilik / Rasmiy e'lon / Minnatdorchilik) */}
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                          {(item.report_type === "MUROJAAT" || item.report_type === "ZAYAVKA") && (
-                            <span className="inline-flex items-center gap-1 rounded bg-purple-50 dark:bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              <span>🟣</span> Fuqaro arizasi
-                            </span>
-                          )}
-                          {(item.report_type === "YANGILIK" || item.report_type === "NEWS") && (
-                            <span className="inline-flex items-center gap-1 rounded bg-sky-50 dark:bg-sky-950/80 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                              <span>🔵</span> OAV Yangiligi
-                            </span>
-                          )}
-                          {(item.report_type === "RASMIY_ELON" || item.report_type === "ANNOUNCEMENT") && (
-                            <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/80 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                              <span>📢</span> Rasmiy e&apos;lon
-                            </span>
-                          )}
-                          {(item.report_type === "GRATITUDE" || item.report_type === "MINNATDORCHILIK") && (
-                            <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                              <span>🙏</span> Minnatdorchilik
-                            </span>
-                          )}
-                        </div>
-
-                        <Link
-                          href={`/incidents/${item.id}`}
-                          className="font-bold text-slate-900 hover:text-brand-600 dark:text-slate-100 dark:hover:text-brand-400 block"
-                        >
-                          <HighlightedText text={item.title} keywords={activeKeywords} />
-                        </Link>
-
-                        {/* AI Qisqa xulosasi */}
-                        {item.ai_summary && (
-                          <div className="mt-1.5 p-2 rounded-lg bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40 text-[11px] text-purple-950 dark:text-purple-200 leading-snug">
-                            <span className="font-bold text-purple-700 dark:text-purple-400 mr-1">✨ AI xulosa:</span>
-                            {item.ai_summary}
-                          </div>
-                        )}
-
-                        {/* Yechim izohi (agar bartaraf etilgan bo'lsa) */}
-                        {item.status === "RESOLVED" && item.resolution_notes && (
-                          <div className="mt-1.5 p-2 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 text-[11px] text-emerald-950 dark:text-emerald-200 leading-snug flex items-start gap-1.5">
-                            <span className="font-bold text-emerald-800 dark:text-emerald-300 shrink-0">✨ Yechim:</span>
-                            <span>{item.resolution_notes}</span>
-                          </div>
-                        )}
-
-                        {/* Qaysi kalit so'z bo'yicha aniqlanganligi (faqat 1 ta asosiy nishon) */}
-                        {matchedRule && (
-                          <div className="mt-1 flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300 dark:bg-amber-950/70 dark:border-amber-800 dark:text-amber-200 shadow-2xs">
-                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-extrabold uppercase mr-0.5">Kalit so'z:</span>
-                              <span className="underline decoration-amber-500 decoration-[2px] underline-offset-2 font-black">
-                                «{matchedRule.keyword?.replace(/\.$/, "")}»
-                              </span>
-                            </span>
-                          </div>
-                        )}
-
-                        {item.description && (
-                          <div className="mt-2 text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 leading-relaxed">
-                            <span className="font-sans font-semibold text-[10px] text-slate-400 block mb-1">
-                              💬 {item.source_type === "GROUP" ? "Guruhdagi xabar:" : "Telegram xabari:"}
-                            </span>
-                            <HighlightedText
-                              text={item.description}
-                              keywords={matchedRule?.keyword ? [matchedRule.keyword, ...activeKeywords] : activeKeywords}
-                            />
-                          </div>
-                        )}
-                        {item.media_type === "photo" && item.media_url && (
-                          <div className="mt-2">
-                            <img
-                              src={item.media_url}
-                              alt="Hodisa rasmi"
-                              className="h-20 w-auto rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:scale-105 transition-transform"
-                              onClick={() => window.open(item.media_url!, "_blank")}
-                            />
-                          </div>
-                        )}
-                        {item.media_type === "video" && (
-                          <div className="mt-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1">
-                            <span>🎥 Video xabar biriktirilgan</span>
-                          </div>
-                        )}
-                        {item.location_url && (
-                          <div className="mt-1">
-                            <a
-                              href={item.location_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                            >
-                              <MapPin className="h-3 w-3" />
-                              <span>📍 GPS Xarita (Google Maps)</span>
-                            </a>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 min-w-[170px]">
-                        {item.district || item.address ? (
-                          <div className="space-y-1.5">
-                            {item.district && (
-                              <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-900 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-300">
-                                <Building2 className="h-3 w-3 text-amber-600" />
-                                {item.district}
+                      <tr
+                        key={item.id}
+                        className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                      >
+                        {/* 1. Asosiy mazmun: Keng ustun */}
+                        <td className="py-4 px-4 align-top min-w-[420px]">
+                          {/* AI Tahlili Natijasi (Murojaat / Yangilik / Rasmiy e'lon / Minnatdorchilik) */}
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                            {(item.report_type === "MUROJAAT" || item.report_type === "ZAYAVKA") && (
+                              <span className="inline-flex items-center gap-1 rounded bg-purple-50 dark:bg-purple-950/80 px-2.5 py-0.5 text-xs font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                <span>🟣</span> Fuqaro arizasi
                               </span>
                             )}
-                            {item.address && (
-                              <div className="flex items-center gap-1 text-xs font-semibold text-rose-800 dark:text-rose-300">
-                                <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                                <span>{item.address}</span>
+                            {(item.report_type === "YANGILIK" || item.report_type === "NEWS") && (
+                              <span className="inline-flex items-center gap-1 rounded bg-sky-50 dark:bg-sky-950/80 px-2.5 py-0.5 text-xs font-bold text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                <span>🔵</span> OAV Yangiligi
+                              </span>
+                            )}
+                            {(item.report_type === "RASMIY_ELON" || item.report_type === "ANNOUNCEMENT") && (
+                              <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950/80 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                <span>📢</span> Rasmiy e&apos;lon
+                              </span>
+                            )}
+                            {(item.report_type === "GRATITUDE" || item.report_type === "MINNATDORCHILIK") && (
+                              <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                <span>🙏</span> Minnatdorchilik
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Sarlavha - keng, toza va chiroyli */}
+                          <Link
+                            href={`/incidents/${item.id}`}
+                            className="font-bold text-sm sm:text-base text-slate-900 hover:text-sky-600 dark:text-slate-100 dark:hover:text-sky-400 transition-colors block leading-snug break-words"
+                          >
+                            <HighlightedText text={cleanTitle} keywords={activeKeywords} />
+                          </Link>
+
+                          {/* AI Qisqa xulosasi */}
+                          {item.ai_summary && (
+                            <div className="mt-2 p-2.5 rounded-lg bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40 text-xs text-purple-950 dark:text-purple-200 leading-relaxed">
+                              <span className="font-bold text-purple-700 dark:text-purple-400 mr-1.5">✨ AI xulosa:</span>
+                              <span>{item.ai_summary}</span>
+                            </div>
+                          )}
+
+                          {/* Yechim izohi (agar bartaraf etilgan bo'lsa) */}
+                          {item.status === "RESOLVED" && item.resolution_notes && (
+                            <div className="mt-2 p-2.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 text-xs text-emerald-950 dark:text-emerald-200 leading-relaxed flex items-start gap-1.5">
+                              <span className="font-bold text-emerald-800 dark:text-emerald-300 shrink-0">✨ Yechim:</span>
+                              <span>{item.resolution_notes}</span>
+                            </div>
+                          )}
+
+                          {/* Qaysi kalit so'z bo'yicha aniqlanganligi */}
+                          {matchedRule && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300 dark:bg-amber-950/70 dark:border-amber-800 dark:text-amber-200 shadow-2xs">
+                                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-extrabold uppercase mr-0.5">Kalit so'z:</span>
+                                <span className="underline decoration-amber-500 decoration-[2px] underline-offset-2 font-black">
+                                  «{matchedRule.keyword?.replace(/\.$/, "")}»
+                                </span>
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Telegram xabari matni */}
+                          {item.description && (
+                            <div className="mt-2 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800 leading-relaxed">
+                              <span className="font-sans font-semibold text-[10px] text-slate-400 block mb-1">
+                                💬 {item.source_type === "GROUP" ? "Guruhdagi xabar:" : "Telegram xabari:"}
+                              </span>
+                              <div className="max-h-36 overflow-y-auto whitespace-pre-wrap break-words pr-1 scrollbar-thin">
+                                <HighlightedText
+                                  text={item.description}
+                                  keywords={matchedRule?.keyword ? [matchedRule.keyword, ...activeKeywords] : activeKeywords}
+                                />
                               </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Aniqlanmagan</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {renderIncidentStatusBadge(item)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-800 dark:text-sky-300">
-                            <Send className="h-3 w-3 text-sky-500" />
-                            {item.source_type === "GROUP"
-                              ? "Guruh:"
-                              : "Kanal:"}{" "}
-                            {item.source_name}
-                          </span>
-                          {item.source_username && (
-                            <div className="text-[11px] text-slate-400">
+                            </div>
+                          )}
+
+                          {item.media_type === "photo" && item.media_url && (
+                            <div className="mt-2">
+                              <img
+                                src={item.media_url}
+                                alt="Hodisa rasmi"
+                                className="h-20 w-auto rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => window.open(item.media_url!, "_blank")}
+                              />
+                            </div>
+                          )}
+
+                          {item.media_type === "video" && (
+                            <div className="mt-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                              <span>🎥 Video xabar biriktirilgan</span>
+                            </div>
+                          )}
+
+                          {item.location_url && (
+                            <div className="mt-1">
                               <a
-                                href={`https://t.me/${item.source_username}`}
+                                href={item.location_url}
                                 target="_blank"
-                                rel="noreferrer"
-                                className="text-sky-600 hover:underline dark:text-sky-400"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                               >
-                                @{item.source_username}
+                                <MapPin className="h-3 w-3" />
+                                <span>📍 GPS Xarita (Google Maps)</span>
                               </a>
                             </div>
                           )}
-                          <div>
-                            {(() => {
-                              const descUrl = item.description?.match(/https:\/\/t\.me\/(?:c\/\d+|\w+)(?:\/\d+)+/)?.[0];
-                              const directUrl = item.message_url || descUrl || (item.source_username ? `https://t.me/${item.source_username}` : undefined);
-                              if (!directUrl) return null;
-                              return (
+                        </td>
+
+                        {/* 2. Hudud va Manzil */}
+                        <td className="py-4 px-4 align-top w-44 min-w-[150px] max-w-[200px]">
+                          {item.district || item.address ? (
+                            <div className="space-y-1.5">
+                              {item.district && (
+                                <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-900 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-300">
+                                  <Building2 className="h-3 w-3 text-amber-600 shrink-0" />
+                                  <span className="truncate">{item.district}</span>
+                                </span>
+                              )}
+                              {item.address && (
+                                <div className="flex items-start gap-1 text-xs font-semibold text-rose-800 dark:text-rose-300 break-words leading-snug">
+                                  <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
+                                  <span>{item.address}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Aniqlanmagan</span>
+                          )}
+                        </td>
+
+                        {/* 3. Holati */}
+                        <td className="py-4 px-4 align-top w-36 min-w-[130px] whitespace-nowrap">
+                          {renderIncidentStatusBadge(item)}
+                        </td>
+
+                        {/* 4. Manba */}
+                        <td className="py-4 px-4 align-top w-48 min-w-[160px] max-w-[220px]">
+                          <div className="space-y-1">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-800 dark:text-sky-300 break-words">
+                              <Send className="h-3 w-3 text-sky-500 shrink-0" />
+                              <span>
+                                {item.source_type === "GROUP" ? "Guruh:" : "Kanal:"} {item.source_name}
+                              </span>
+                            </span>
+                            {item.source_username && (
+                              <div className="text-[11px] text-slate-400 font-mono">
+                                <a
+                                  href={`https://t.me/${item.source_username}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-sky-600 hover:underline dark:text-sky-400"
+                                >
+                                  @{item.source_username}
+                                </a>
+                              </div>
+                            )}
+                            {directUrl && (
+                              <div className="pt-0.5">
                                 <a
                                   href={directUrl}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-700 hover:underline dark:text-sky-400"
-                                  title={item.source_type === "GROUP" ? "Guruhdagi xabarni ochish" : (item.message_url ? "Telegramdagi xabarni ochish" : "Telegramda ochish")}
+                                  title={item.source_type === "GROUP" ? "Guruhdagi xabarni ochish" : "Telegramdagi xabarni ochish"}
                                 >
-                                  Telegramda ochish <ExternalLink className="h-2.5 w-2.5" />
+                                  <span>Telegramda ochish</span>
+                                  <ExternalLink className="h-2.5 w-2.5" />
                                 </a>
-                              );
-                            })()}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400">
-                        {formatDateTime(item.first_seen_at)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <Link href={`/incidents/${item.id}`}>
-                          <Button size="sm" variant="outline">
-                            Batafsil
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
+                        </td>
+
+                        {/* 5. Aniqlangan vaqti */}
+                        <td className="py-4 px-4 align-top w-36 min-w-[130px] text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {formatDateTime(item.first_seen_at)}
+                        </td>
+
+                        {/* 6. Amal */}
+                        <td className="py-4 px-4 align-top w-24 text-right whitespace-nowrap">
+                          <Link href={`/incidents/${item.id}`}>
+                            <Button size="sm" variant="outline" className="font-semibold shadow-2xs hover:bg-slate-100 dark:hover:bg-slate-800">
+                              Batafsil
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
                     );
                   })
                 )}

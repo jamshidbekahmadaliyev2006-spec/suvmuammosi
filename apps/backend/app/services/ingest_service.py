@@ -236,7 +236,12 @@ def _apply_analysis(
         else:
             title = f"{prefix}GPS Lokatsiya orqali murojaat"
     else:
-        title = f"{prefix}{first_clean[:110]}" or "Suv bilan bog'liq murojaat"
+        if len(first_clean) <= 150:
+            title = f"{prefix}{first_clean}"
+        else:
+            clean_cut = first_clean[:150].rsplit(" ", 1)[0]
+            title = f"{prefix}{clean_cut}..."
+        title = title or "Suv bilan bog'liq murojaat"
 
     incident = Incident(
         title=title,
