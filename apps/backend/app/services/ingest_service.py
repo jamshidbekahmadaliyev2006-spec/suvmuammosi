@@ -188,11 +188,15 @@ def _apply_analysis(
         address = ai_res.get("extracted_address")
 
     # Xabar turiga qarab mantiqiy status:
-    # Yangiliklar, Minnatdorchilik va Rasmiy e'lonlar hech qachon OPEN (Hal qilinmagan) bo'lib turmaydi!
+    # 1. Agar xabar suv muammolariga mutlaqo aloqador bo'lmagan reklama, chet el urushi, diskont yoki boshqa narsa bo'lsa:
+    # Hodisa yaratilmaydi va rad etiladi (aqlli filtr).
+    if report_type == "IRRELEVANT":
+        msg.processing_status = ProcessingStatus.NO_MATCH
+        return None, district, address
+
+    # 2. Yangiliklar, Minnatdorchilik va Rasmiy e'lonlar hech qachon OPEN (Hal qilinmagan) bo'lib turmaydi!
     if report_type in ("NEWS", "GRATITUDE", "ANNOUNCEMENT"):
         final_status = IncidentStatus.RESOLVED
-    elif report_type == "IRRELEVANT":
-        final_status = IncidentStatus.INVALID
     elif resolution_match:
         final_status = IncidentStatus.RESOLVED
     else:
@@ -223,9 +227,19 @@ def _apply_analysis(
         msg.processing_status = ProcessingStatus.LINKED
         return related.id, related.district, related.address
 
-    first_line = msg.message_text.strip().split("\n")[0]
+    lines = [l.strip() for l in msg.message_text.split("\n") if l.strip()]
+    chosen = ""
+    for line in lines:
+        cleaned = re.sub(r"^[#@\W\d_]+", "", line).strip()
+        words = [w for w in cleaned.split() if not w.startswith("#")]
+        if len(words) >= 3 and not all(w.upper() in ("ТЕЗКОР", "ТАРҚАТИНГ", "ДИҚҚАТ", "TEZKOR", "TARQATING", "DIQQAT", "ШОК", "SHOK") for w in words):
+            chosen = " ".join(words)
+            break
+    if not chosen and lines:
+        chosen = lines[0]
+
     prefix = "Fuqaro murojaati: " if is_citizen_report else ""
-    first_clean = " ".join(first_line.split())
+    first_clean = re.sub(r"^[^\w\s\(\)«»]+", "", chosen).strip()
     if is_citizen_report and "fuqaro:" in first_clean.lower():
         first_clean = re.sub(r"^[👤\s]*fuqaro:\s*", "", first_clean, flags=re.I).strip()
 
