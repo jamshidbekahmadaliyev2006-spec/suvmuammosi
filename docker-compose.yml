@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: suvnazorat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-suvnazorat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-suvnazorat_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-suvnazorat}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-suvnazorat} -d ${POSTGRES_DB:-suvnazorat}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: ../../infrastructure/docker/backend.Dockerfile
+    container_name: suvnazorat-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-change_me_super_secret_key_32_chars_min}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-suvnazorat}:${POSTGRES_PASSWORD:-suvnazorat_pass_2026}@postgres:5432/${POSTGRES_DB:-suvnazorat}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      TELEGRAM_BOT_API_KEY: ${TELEGRAM_BOT_API_KEY:-bot_secret_api_key_2026}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      COOKIE_SECURE: "false"
+    ports:
+      - "8000:8000"
+
+  bot:
+    build:
+      context: ./apps/bot
+      dockerfile: ../../infrastructure/docker/bot.Dockerfile
+    container_name: suvnazorat-bot
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      BACKEND_URL: http://backend:8000
+      TELEGRAM_BOT_API_KEY: ${TELEGRAM_BOT_API_KEY:-bot_secret_api_key_2026}
+      DETECTION_RULES_REFRESH_SECONDS: ${DETECTION_RULES_REFRESH_SECONDS:-20}
+      HEARTBEAT_INTERVAL_SECONDS: ${HEARTBEAT_INTERVAL_SECONDS:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: ../../infrastructure/docker/frontend.Dockerfile
+    container_name: suvnazorat-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: ${BACKEND_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

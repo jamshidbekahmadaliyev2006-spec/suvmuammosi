@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.venv/
+apps/**/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.db
+*.sqlite*
+node_modules/
+.next/
+backups/
+scratch/
+*.log
+*.zip

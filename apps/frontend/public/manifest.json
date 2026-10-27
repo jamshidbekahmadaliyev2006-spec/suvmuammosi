@@ -1,0 +1,9 @@
+{
+  "name": "SuvNazorat — Suv Ta'minoti Monitoringi",
+  "short_name": "SuvNazorat",
+  "description": "Suv ta'minoti va kanalizatsiya muammolarini markaziy monitoring qilish platformasi",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#0c8ee9"
+}
