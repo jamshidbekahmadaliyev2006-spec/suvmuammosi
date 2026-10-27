@@ -7,7 +7,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-*.db
+*.db*
 *.sqlite*
 node_modules/
 .next/
