@@ -23,6 +23,10 @@ async def lifespan(_: FastAPI):  # type: ignore[no-untyped-def]
     setup_logging(settings.log_level)
     log.info("SuvNazorat backend ishga tushdi (env=%s)", settings.app_env)
 
+    if settings.app_env == "test":
+        yield
+        return
+
     # Ochiq Telegram kanallarini avtomatik monitoring qilish (bot admin bo'lmasa ham)
     async def channel_polling_loop() -> None:
         from app.db.session import session_scope

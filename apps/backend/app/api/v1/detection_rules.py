@@ -57,12 +57,14 @@ def rescan_rules(db: DbDep, _: CurrentUser) -> dict[str, int | str]:
 @router.post("", response_model=RuleOut, status_code=201)
 def create(data: RuleCreate, db: DbDep, user: CurrentUser) -> RuleOut:
     rule = rules_service.create_rule(db, data, user.id)
-    try:
-        from app.services.channel_scraper import rescan_messages_with_rules
-        rescan_messages_with_rules(db)
-    except Exception as e:
-        import logging
-        logging.getLogger("suvnazorat.rules").warning("Yangi qoida kiritilganda rescan xatosi: %s", e)
+    from app.core.config import get_settings
+    if get_settings().app_env != "test":
+        try:
+            from app.services.channel_scraper import rescan_messages_with_rules
+            rescan_messages_with_rules(db)
+        except Exception as e:
+            import logging
+            logging.getLogger("suvnazorat.rules").warning("Yangi qoida kiritilganda rescan xatosi: %s", e)
     return rule  # type: ignore[return-value]
 
 

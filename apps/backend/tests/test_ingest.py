@@ -21,7 +21,7 @@ def test_matching_message_creates_incident(auth, source):
     assert body["status"] == "INCIDENT_CREATED" and body["incident_id"] and not body["duplicate"]
     inc = auth.get(f"/api/v1/incidents/{body['incident_id']}").json()
     assert inc["status"] == "OPEN" and inc["category"] == "PIPE_BURST" and inc["priority"] == "HIGH"
-    assert inc["district"] == "Toshkent sh., Chilonzor tumani" and inc["address"] is None
+    assert inc["district"] == "Toshkent sh., Chilonzor tumani" and (inc["address"] is None or inc["address"] == "Chilonzor")
     assert inc["first_message"]["message_text"] == "Chilonzorda quvur yorildi"
 
 

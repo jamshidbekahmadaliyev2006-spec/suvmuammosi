@@ -74,7 +74,14 @@ def get_stats(db: Session) -> DashboardStats:
         db,
         select(func.count()).select_from(Incident).where(
             Incident.report_type.in_(["ZAYAVKA", "MUROJAAT"]),
-            Incident.status.in_([IncidentStatus.OPEN, IncidentStatus.IN_PROGRESS]),
+            Incident.status == IncidentStatus.OPEN,
+        ),
+    )
+    zayavka_in_progress = _count(
+        db,
+        select(func.count()).select_from(Incident).where(
+            Incident.report_type.in_(["ZAYAVKA", "MUROJAAT"]),
+            Incident.status == IncidentStatus.IN_PROGRESS,
         ),
     )
     zayavka_resolved = _count(
@@ -91,12 +98,12 @@ def get_stats(db: Session) -> DashboardStats:
             Incident.status != IncidentStatus.INVALID,
         ),
     )
-    total_zayavkas = zayavka_open + zayavka_resolved
+    total_zayavkas = zayavka_open + zayavka_in_progress + zayavka_resolved
 
     cards = StatsCards(
         total_incidents=total_zayavkas,
         open_incidents=zayavka_open,
-        in_progress_incidents=0,
+        in_progress_incidents=zayavka_in_progress,
         resolved_incidents=zayavka_resolved,
         news_count=news_count,
         total_zayavkas=total_zayavkas,
