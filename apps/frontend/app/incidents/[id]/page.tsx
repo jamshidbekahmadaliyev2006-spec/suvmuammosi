@@ -385,7 +385,8 @@ export default function IncidentDetailPage() {
                       incident.message_url ||
                       incident.first_message?.message_url ||
                       descUrl ||
-                      (incident.source_username ? `https://t.me/${incident.source_username}` : "https://t.me/hokimyatsuvnazorati_bot");
+                      (incident.source_username ? `https://t.me/${incident.source_username}` : "");
+                    if (!directUrl) return null;
                     return (
                       <a
                         href={directUrl}

@@ -555,11 +555,9 @@ function IncidentsContent() {
                         <div className="space-y-1">
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-800 dark:text-sky-300">
                             <Send className="h-3 w-3 text-sky-500" />
-                            {item.source_type === "CHANNEL"
-                              ? "Kanal:"
-                              : item.source_type === "BOT"
-                              ? "Bot orqali:"
-                              : "Guruh:"}{" "}
+                            {item.source_type === "GROUP"
+                              ? "Guruh:"
+                              : "Kanal:"}{" "}
                             {item.source_name}
                           </span>
                           {item.source_username && (
@@ -577,7 +575,8 @@ function IncidentsContent() {
                           <div>
                             {(() => {
                               const descUrl = item.description?.match(/https:\/\/t\.me\/(?:c\/\d+|\w+)(?:\/\d+)+/)?.[0];
-                              const directUrl = item.message_url || descUrl || (item.source_username ? `https://t.me/${item.source_username}` : "https://t.me/hokimyatsuvnazorati_bot");
+                              const directUrl = item.message_url || descUrl || (item.source_username ? `https://t.me/${item.source_username}` : undefined);
+                              if (!directUrl) return null;
                               return (
                                 <a
                                   href={directUrl}

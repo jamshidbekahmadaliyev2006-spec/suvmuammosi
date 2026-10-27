@@ -267,10 +267,14 @@ def _apply_analysis(
 
 def ingest_message(db: Session, data: BotMessageIn) -> BotMessageOut:
     if data.is_citizen_report:
-        from app.services.source_service import get_or_create_bot_source
-        source = get_or_create_bot_source(db)
-        # Turli fuqarolar shaxsiy chatidan bir xil message_id kelishi mumkinligi sababli chat_id bilan unikal qilamiz
-        unique_message_id = abs(data.chat_id) * 1000000 + (data.message_id % 1000000)
+        # Tizim talabiga ko'ra bot orqali to'g'ridan-to'g'ri murojaat qabul qilinmaydi.
+        # Monitoring faqat belgilangan rasmiy Telegram kanallari va guruhlaridan amalga oshiriladi.
+        return BotMessageOut(
+            status="ignored",
+            incident_id=None,
+            district=None,
+            address=None,
+        )
     else:
         source = db.scalar(
             select(MonitoringSource).where(MonitoringSource.telegram_chat_id == data.chat_id)

@@ -19,7 +19,6 @@ import {
   Check,
   User,
   Phone,
-  Bot,
   Camera,
   Video,
   Sparkles,
@@ -116,7 +115,7 @@ function parseCitizenDetails(text?: string | null): CitizenDetails | null {
 function getIncidentSourceInfo(inc: IncidentListItem) {
   let sourceName = inc.source_name || "Telegram Kanal";
   let sourceUsername = inc.source_username || "";
-  let sourceType = inc.source_type || "CHANNEL";
+  let sourceType = inc.source_type === "GROUP" ? "GROUP" : "CHANNEL";
   let messageUrl = inc.message_url || "";
 
   if (inc.description) {
@@ -131,29 +130,15 @@ function getIncidentSourceInfo(inc: IncidentListItem) {
     }
   }
 
-  const isCitizen =
-    sourceType === "BOT" ||
-    sourceName.toLowerCase().includes("bot") ||
-    sourceUsername === "hokimyatsuvnazorati_bot" ||
-    Boolean(inc.description && (inc.description.includes("Fuqaro:") || inc.description.includes("Fuqaro telefoni:")));
-
-  if (isCitizen) {
-    sourceType = "BOT";
-    sourceName = "Telegram Bot (Murojaatlar)";
-    sourceUsername = "hokimyatsuvnazorati_bot";
-    if (!messageUrl) messageUrl = "https://t.me/hokimyatsuvnazorati_bot";
-  }
-
   const finalUrl =
     messageUrl ||
-    (sourceUsername ? `https://t.me/${sourceUsername}` : "https://t.me/hokimyatsuvnazorati_bot");
+    (sourceUsername ? `https://t.me/${sourceUsername}` : "");
 
   return {
     sourceName,
     sourceUsername,
     sourceType,
     messageUrl: finalUrl,
-    isCitizen,
   };
 }
 
@@ -223,7 +208,7 @@ export default function DashboardPage() {
     setResolving(true);
     try {
       const note = resolutionNote.trim() || "Avariya brigadasi tomonidan to'liq bartaraf etildi.";
-      await api.patchIncident(resolveModalIncident.id, {
+      await api.updateIncident(resolveModalIncident.id, {
         status: "RESOLVED" as const,
         resolution_notes: note,
       });
@@ -255,7 +240,7 @@ export default function DashboardPage() {
   const handleReopen = async (inc: IncidentListItem) => {
     if (!confirm("Ushbu arizani qayta ochmoqchimisiz?")) return;
     try {
-      await api.patchIncident(inc.id, {
+      await api.updateIncident(inc.id, {
         status: "OPEN" as const,
         comment: "Dispetcher tomonidan qayta ochildi.",
       });
@@ -804,7 +789,7 @@ export default function DashboardPage() {
                       : "Hozircha mos keluvchi hodisalar yo'q"}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Faol {activeKeywords.length} ta kalit so&apos;z bo&apos;yicha Telegram kanallari va botdan xabarlar real vaqtda kuzatilmoqda.
+                    Faol {activeKeywords.length} ta kalit so&apos;z bo&apos;yicha Telegram kanallari va guruhlaridagi xabarlar real vaqtda kuzatilmoqda.
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-3 pt-1">
@@ -829,7 +814,7 @@ export default function DashboardPage() {
               {filteredIncidents.map((inc) => {
                 const citizen = parseCitizenDetails(inc.description);
                 const sourceInfo = getIncidentSourceInfo(inc);
-                const isCitizenCard = sourceInfo.isCitizen || Boolean(citizen);
+                const isCitizenCard = Boolean(citizen);
                 const cleanTitle = formatIncidentTitle(inc, citizen, isCitizenCard);
                 const isResolved = inc.status === "RESOLVED";
                 const matchedRule = getMatchedRule(inc);
@@ -1147,12 +1132,7 @@ export default function DashboardPage() {
                       {/* 4. Pastki qator: Manba va vaqt ma'lumotlari */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400">
                         <div className="flex items-center gap-1.5">
-                          {isCitizenCard ? (
-                            <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
-                              <Bot className="h-3.5 w-3.5" />
-                              <span>Telegram Bot: Telegram Bot (Murojaatlar) (@hokimyatsuvnazorati_bot)</span>
-                            </span>
-                          ) : sourceInfo.sourceType === "GROUP" ? (
+                          {sourceInfo.sourceType === "GROUP" ? (
                             <span className="inline-flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 font-semibold">
                               <Radio className="h-3.5 w-3.5 text-indigo-500" />
                               <span>Guruh: {sourceInfo.sourceName} {sourceInfo.sourceUsername ? `(@${sourceInfo.sourceUsername})` : ""}</span>
